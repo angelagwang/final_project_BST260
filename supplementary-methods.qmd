@@ -1,0 +1,95 @@
+---
+title: "Supplementary Methods"
+format: pdf
+editor: visual
+---
+
+```{r message=FALSE, include=FALSE}
+#load packages and data
+library(excessmort) 
+library(tidyverse)
+library(lubridate)
+library(knitr)
+
+weekly_counts <- readRDS("data/weekly_counts.rds")
+dat <- readRDS("data/dat.rds")
+dat_excess_og <- readRDS("data/dat_excess_original.rds")
+```
+
+# Figure 1
+
+```{r fig.width = 10, fig.height=8, echo = FALSE}
+weekly_counts_no2017 <- dat %>%
+  filter(year(date) != "2017") %>%
+  group_by(week, date) %>%
+  summarize(rate = sum(total_deaths) / sum(population) *1000, .groups = "drop") 
+
+#calculate mortality rate for 2017
+weekly_counts_2017 <- dat %>%
+  filter(year(date) == "2017") %>%
+  group_by(week, date) %>%
+  summarize(rate = sum(total_deaths) / sum(population) *1000, .groups = "drop") 
+
+#boxplots of mortality rate from 2000-2016 with additional points layered for 2017
+ggplot(data = weekly_counts_no2017, aes(x = as.factor(week), y =rate)) +
+  geom_boxplot() +
+  geom_point(data = weekly_counts_2017, aes(x=as.factor(week), y=rate), color = 'red') +
+  labs(title = "Mortality Rates Week from 2000 to 2016", subtitle = "Rates for 2017 shown in red.", x = "Week", y = "Mortality Rate per 1000")
+```
+
+\newpage
+
+# Figure 2
+
+```{r fig.width = 10, fig.height=10, echo = FALSE}
+fit <- lm(mortality_rate ~ week + agegroup + sex + diftime + population, data = filter(dat, year < 2017)) 
+
+dat_comb = data.frame(dat)
+
+dat_comb$exp_mortality_rate <- predict(fit, newdata = dat, se.fit = TRUE)$fit
+dat_comb$expected_rate_se <- predict(fit, newdata = dat, se.fit = TRUE)$se.fit
+
+dat_comb <- dat_comb %>%
+  group_by(week, agegroup, sex) %>%
+  mutate(expected_count = exp_mortality_rate * population,
+         excess = total_deaths - expected_count) 
+
+ggplot(data = dat_comb, aes(x = date, y = mortality_rate)) +
+  geom_point() +
+  geom_line(aes(y = exp_mortality_rate), color = "red") +
+  facet_grid(agegroup~sex, scales = "free_y") +
+  labs(title = "Predicted Mortality Rate vs Actual Mortality Rate", x = "Date", y = "Mortality Rates", subtitle = "Predictions shown in red are based on the preliminary model fit on all age groups together.")
+```
+
+\newpage
+
+# Figure 3
+
+```{r fig.width = 10, fig.height=10, echo = FALSE}
+#graph of expected mortality rate vs actual mortality rate
+dat_excess_og %>%
+  ggplot(aes(x = date, y = mortality_rate)) +
+    geom_point() +
+    geom_line(aes(y = exp_mortality_rate), color = "red") +
+    facet_grid(agegroup~sex, scales = "free_y") +
+    labs(title = "Predicted Mortality Rate vs Actual Mortality Rate", x = "Date", y = "Mortality Rates", subtitle = "Predictions shown in red are based on the model fit on separate age groups using data from all years from 2000 to 2016.")
+```
+
+\newpage
+
+# Figure 4
+
+```{r fig.width = 14, fig.height=16, echo = FALSE, message = FALSE}
+dat_excess_og %>%
+  filter(year <= 2017) %>%
+  group_by(year, week) %>%
+  summarize(total_excess = sum(excess)) %>% #sum excess across all groups per week
+  ungroup %>% 
+  #line plot of total excess deahts per week with ci
+  ggplot(aes(x = as.numeric(week), y = total_excess, group =1)) +  
+    geom_line() +
+    geom_point() +
+    facet_wrap(~year) +
+    geom_hline(yintercept = 110, color = "red", linetype="dashed") +
+    labs(title = "Total Excess Deaths per Year from 2000 to 2017", subtitle = "Threshold set at 110 excess deaths", x = "Week", y = "Total Excess Deaths", x = "Year")
+```
