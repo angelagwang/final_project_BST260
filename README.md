@@ -2,9 +2,9 @@
 
 Reproducing All Results:
 
-In order to reproduce the results in this analysis, you should first run the wrangling script in the code folder. This script will load the dataset used in the analysis, perform all the necessary data cleaning, and save the cleaned data files used in this analysis to the data folder.
+In order to reproduce the results in this analysis, you should first run the wrangling script in the code directory. This script will load the dataset used in the analysis, perform all the necessary data cleaning, and save the cleaned data files used in this analysis to the data directory.
 
-Once this script is run, you can just run the final-report.qmd and supplementary-methods.qmd files to reproduce the final report and all the supplementary graphs and tables.
+Once this script is run, you can just run the final-report.qmd file in the home directory and supplementary-methods.qmd file in the docs directory to reproduce the final report and all the supplementary graphs and tables.
 
 
 Further Information on the Files Saved in the Data Folder: 
